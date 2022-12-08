@@ -10,21 +10,29 @@ namespace StrategyGame.Units
 		[SerializeField]
 		protected GameObject _selectedEffect;
 
+		public bool IsSelected { get; private set; }
+
 		protected NavMeshAgent _agent;
 		protected Command _command;
 		protected int _health;
-		public bool IsSelected { get; private set; }
+        protected readonly WaitForSeconds _navMeshCalculationDelay = new WaitForSeconds(0.25f);
 
-		protected virtual void Awake()
+        protected virtual void Awake()
 		{
 			_selectedEffect.SetActive(false);
 			IsSelected = false;
 			_agent = GetComponent<NavMeshAgent>();
 		}
 
-		public abstract void Command(Command command);
+		internal virtual void Command(Command command)
+		{
+            if (command is Move moveCommand)
+            {
+                StartCoroutine(Co_Move(moveCommand));
+            }
+        }
 
-		public void SetDamage(int damageAmount)
+		internal void SetDamage(int damageAmount)
 		{
 			_health -= damageAmount;
 
@@ -39,6 +47,26 @@ namespace StrategyGame.Units
 			throw new System.NotImplementedException();
 		}
 
+		internal void OnUnitSelected()
+		{
+			if (!IsSelected)
+			{
+				_selectedEffect.SetActive(true);
+
+				IsSelected = true;
+			}
+		}
+
+        internal void OnUnitDeselected()
+		{
+			if (IsSelected)
+			{
+				_selectedEffect.SetActive(false);
+
+				IsSelected = false;
+			}
+		}
+
 		protected bool HasReachedDestination()
 		{
 			if (_agent.pathStatus == NavMeshPathStatus.PathComplete
@@ -51,24 +79,30 @@ namespace StrategyGame.Units
 			return false;
 		}
 
-		public void OnUnitSelected()
+		protected IEnumerator Co_InitiateMoveCommand(Move moveCommand)
 		{
-			if (!IsSelected)
-			{
-				_selectedEffect.SetActive(true);
+            yield return new WaitWhile(() => _agent.pathPending);
 
-				IsSelected = true;
-			}
-		}
+            var path = new NavMeshPath();
+            _agent.CalculatePath(moveCommand.Destination, path);
 
-		public void OnUnitDeselected()
-		{
-			if (IsSelected)
-			{
-				_selectedEffect.SetActive(false);
+            if (path.status == UnityEngine.AI.NavMeshPathStatus.PathPartial)
+            {
+                Debug.Log($"unit <color=yellow>{name}</color> <color=red><b>couldn't find path</b></color> to reach destination.");
+                yield break;
+            }
 
-				IsSelected = false;
-			}
-		}
+            if (path.status == UnityEngine.AI.NavMeshPathStatus.PathPartial)
+            {
+                Debug.Log($"unit <color=yellow>{name}</color> path to destination is <color=red><b>invalid.</b></color>");
+                yield break;
+            }
+
+            _agent.path = path;
+
+			yield return Co_Move();
+        }
+
+		protected abstract IEnumerator Co_Move();
 	}
 }
