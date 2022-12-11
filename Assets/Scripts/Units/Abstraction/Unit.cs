@@ -1,4 +1,5 @@
 using StrategyGame.Commands;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -28,11 +29,11 @@ namespace StrategyGame.Units
 		{
             if (command is Move moveCommand)
             {
-                StartCoroutine(Co_Move(moveCommand));
+                StartCoroutine(Co_InitiateMoveCommand(moveCommand));
             }
         }
 
-		internal void SetDamage(int damageAmount)
+		public void SetDamage(int damageAmount)
 		{
 			_health -= damageAmount;
 
@@ -100,7 +101,7 @@ namespace StrategyGame.Units
 
             _agent.path = path;
 
-			yield return Co_Move();
+			StartCoroutine(Co_Move());
         }
 
 		protected abstract IEnumerator Co_Move();
