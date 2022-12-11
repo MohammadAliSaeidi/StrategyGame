@@ -7,95 +7,110 @@ namespace StrategyGame
 	public class CameraController : MonoBehaviour
 	{
 		[SerializeField]
-		private Transform _virtualCameraTr;
-
-		[Header("Sphere cast")]
-		[SerializeField]
-		private float _sphereCastRadius = 1;
+		private Transform _mainVirtualCamera;
 
 		[SerializeField]
-		private LayerMask _sphereCastLayerMask;
+		private float _scrollSpeed = 0.1f;
+
+		[Header("Camera looking point raycast")]
+		[SerializeField]
+		private Transform _rayOrigin;
 
 		[SerializeField]
-		private float _minDistanceToSphereCast = 4;
+		private float _rayOriginDistance = 150;
+
+		[SerializeField]
+		private Vector2 _cameraRotation = new(45, 45);
+
+		[SerializeField]
+		private LayerMask _raycastLayerMask;
+
+		[SerializeField]
+		private Transform _cameraTargetPositionTr;
+
+		[Header("Camera zooming")]
+		[SerializeField]
+		private float _cameraStartDistanceToGround = 50;
+
+		[SerializeField]
+		private float _minCameraDistance = 10;
+
+		[SerializeField]
+		private float _maxCameraDistance = 100;
+
+		[SerializeField]
+		private float _movementSmoothing = 10;
 
 		[Header("Camera movement")]
 		[SerializeField]
-		private float _zoomSmoothing = 2;
-		[SerializeField]
-		private float _scrollSpeed = 5;
-
-		[SerializeField]
-		private float _movementSmoothing = 3;
-		[SerializeField]
-		private float _movementSpeed = 5;
+		private float _movementSpeed = 50;
 
 		private Ray _cameraRay = new();
-		private Vector3 _targetPosition;
-		private Vector2 _cameraMovementInputValue;
-		private Vector3 _sphereCastHitPoint;
 		private bool _isMoving = false;
-		private float _distanceFromSphereCast;
+		private Vector2 _movementInputValue;
 
 		private void Start()
 		{
-			_targetPosition = _virtualCameraTr.position;
-			_isMoving = false;
-			_distanceFromSphereCast = 20;
+			_rayOrigin.localPosition = new Vector3(0, 0, -_rayOriginDistance);
+			transform.rotation = Quaternion.Euler(_cameraRotation);
 
-			Inputs.InGame.CameraMovement.performed += delegate { _isMoving = true; };
-			Inputs.InGame.CameraMovement.canceled += delegate { _isMoving = false; };
-			Inputs.InGame.Scrolling.performed += Scrolling;
+			_cameraTargetPositionTr.position = -transform.forward * _cameraStartDistanceToGround;
+
+			InitiateInputs();
 		}
 
-		private void Update()
+		private void InitiateInputs()
 		{
-			// Init Ray
-			_cameraRay.origin = _virtualCameraTr.position;
-			_cameraRay.direction = _virtualCameraTr.forward;
+			Inputs.InGame.CameraMovement.performed += delegate { _isMoving = true; };
+			Inputs.InGame.CameraMovement.canceled += delegate { _isMoving = false; };
+			Inputs.InGame.Scrolling.performed += OnScrolling;
+		}
 
-			if (Physics.SphereCast(_cameraRay,
-						  radius: _sphereCastRadius,
-						  hitInfo: out RaycastHit hitInfo,
-						  maxDistance: Mathf.Infinity,
-						  layerMask: _sphereCastLayerMask))
+		public void Update()
+		{
+			if (_cameraTargetPositionTr.localPosition.z > -_minCameraDistance)
 			{
-				var sphereCastCenter = hitInfo.point + _sphereCastRadius * hitInfo.normal;
-				_sphereCastHitPoint = sphereCastCenter;
-
-				if (Vector3.Distance(_targetPosition, sphereCastCenter) < _minDistanceToSphereCast)
-				{
-					_targetPosition = sphereCastCenter + _minDistanceToSphereCast * -(_virtualCameraTr.forward);
-				}
+				_cameraTargetPositionTr.localPosition = new Vector3(0,0, -_minCameraDistance);
 			}
-			_virtualCameraTr.position = Vector3.Lerp(a: _virtualCameraTr.position,
-													b: _targetPosition,
-													t: Time.deltaTime * _movementSmoothing);
+			else if (_cameraTargetPositionTr.localPosition.z < -_maxCameraDistance)
+			{
+				_cameraTargetPositionTr.localPosition = new Vector3(0,0, -_maxCameraDistance);
+			}
+
+			_mainVirtualCamera.transform.position = Vector3.Lerp(_mainVirtualCamera.transform.position, _cameraTargetPositionTr.position, Time.deltaTime * _movementSmoothing);
+
+			_cameraRay.origin = _rayOrigin.position;
+			_cameraRay.direction = _rayOrigin.forward;
+			if (Physics.Raycast(_cameraRay, out RaycastHit hitInfo, Mathf.Infinity, _raycastLayerMask))
+			{
+				transform.position = hitInfo.point;
+			}
 		}
 
 		private void LateUpdate()
 		{
 			if (_isMoving)
 			{
-				_cameraMovementInputValue = Inputs.InGame.CameraMovement.ReadValue<Vector2>().normalized;
+				_movementInputValue = Inputs.InGame.CameraMovement.ReadValue<Vector2>().normalized;
 
-				var rightOrLeft = (_virtualCameraTr.right * _cameraMovementInputValue.x).normalized;
-				var forwardOrBackward = Vector3.Scale(_virtualCameraTr.forward * _cameraMovementInputValue.y, new Vector3(1, 0, 1)).normalized;
+				var rightOrLeft = (transform.right * _movementInputValue.x).normalized;
+				var forwardOrBackward = Vector3.Scale(transform.forward * _movementInputValue.y, new Vector3(1, 0, 1)).normalized;
 				var moveVector = (rightOrLeft + forwardOrBackward).normalized;
-				_targetPosition += _movementSpeed * Time.deltaTime * moveVector;
+				transform.position += _movementSpeed * Time.deltaTime * moveVector;
 			}
 		}
 
-		private void Scrolling(CallbackContext callbackContext)
+		private void OnScrolling(CallbackContext inputInfo)
 		{
-			var scrollingDelta = callbackContext.ReadValue<float>();
-			_targetPosition += scrollingDelta * _scrollSpeed * _virtualCameraTr.forward;
-		}
-
-		private void OnDrawGizmos()
-		{
-			Gizmos.DrawWireSphere(_sphereCastHitPoint, _sphereCastRadius);
-			Gizmos.DrawSphere(_targetPosition, 0.2f);
+			if (_mainVirtualCamera)
+			{
+				if (_cameraTargetPositionTr.localPosition.z <= -_minCameraDistance &&
+					_cameraTargetPositionTr.localPosition.z >= -_maxCameraDistance)
+				{
+					var scrollingDelta = inputInfo.ReadValue<float>();
+					_cameraTargetPositionTr.localPosition = new Vector3(0, 0, _cameraTargetPositionTr.localPosition.z + scrollingDelta * _scrollSpeed);
+				}
+			}
 		}
 	}
 }

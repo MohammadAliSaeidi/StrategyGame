@@ -20,6 +20,8 @@ namespace StrategyGame
 
 		private void Start()
 		{
+			//Application.targetFrameRate = 60;
+
 			_inGameUISystem.SwitchTo(_inGameUISystem.s_game);
 			_inGameUISystem.e_OnGameScreenOpened.AddListener(() => OnGameScreenOpened());
 			InitiateInputs();

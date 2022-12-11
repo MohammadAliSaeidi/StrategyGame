@@ -12,11 +12,18 @@ namespace StrategyGame.Structures
 		public bool AllowPlacing { get; protected set; }
 		public bool IsPlaced { get; protected set; }
 
+		private Coroutine _checkAllowPlacingCoroutine;
 
-
-		private void Start()
+		public void SetMode(bool isPlaced)
 		{
-			StartCoroutine(Co_CheckAllowPlacing());
+			if (!isPlaced)
+			{
+				if (_checkAllowPlacingCoroutine != null)
+				{
+					StopCoroutine(_checkAllowPlacingCoroutine);
+				}
+				_checkAllowPlacingCoroutine = StartCoroutine(Co_CheckAllowPlacing());
+			}
 		}
 
 		protected IEnumerator Co_CheckAllowPlacing()

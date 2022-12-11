@@ -75,7 +75,7 @@ namespace StrategyGame.Units
 				{
 					foreach (var unit in _unitSelector.SelectedUnits)
 					{
-						if (Physics.Raycast(GetMousePositionRay(), out RaycastHit hitInfo, _groundLayer))
+						if (Physics.Raycast(GetMousePositionRay(), out RaycastHit hitInfo, Mathf.Infinity, _groundLayer))
 						{
 							var destination = hitInfo.point;
 							var moveCommand = new Move(destination);
