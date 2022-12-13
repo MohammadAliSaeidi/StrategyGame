@@ -28,6 +28,7 @@ namespace StrategyGame.Units
 		private Vector2 _endDragingPos;
 		private Rect _rect = new();
 		private bool _isAdditiveSelection;
+		private bool _isDragging;
 
 		private void OnValidate()
 		{
@@ -63,15 +64,25 @@ namespace StrategyGame.Units
 			};
 		}
 
+		private void Update()
+		{
+			if (EnableBehaviour && _isDragging)
+			{
+				_dragAndSelectUI.OnDrag(MousePositionInputAction.ReadValue<Vector2>());
+			}
+		}
+
 		private void OnDrag()
 		{
 			if (EnableBehaviour)
 			{
+				_isDragging = true;
+				_startDragingPos = MousePositionInputAction.ReadValue<Vector2>();
+
 				_dragAndSelectUI.gameObject.SetActive(true);
+				_dragAndSelectUI.OnBeginDrag(_startDragingPos);
 
 				Debug.Log($"<color=yellow>↓</color>Start drag at <color=yellow>{Inputs.InGame.MousePosition.ReadValue<Vector2>()}</color>");
-
-				_startDragingPos = MousePositionInputAction.ReadValue<Vector2>();
 			}
 			else
 			{
@@ -81,11 +92,13 @@ namespace StrategyGame.Units
 
 		private void OnEndDrag()
 		{
+			_isDragging = false;
 			if (EnableBehaviour)
 			{
 				Debug.Log($"<color=yellow>↑</color>End drag at <color=yellow>{MousePositionInputAction.ReadValue<Vector2>()}</color>");
 
 				_endDragingPos = MousePositionInputAction.ReadValue<Vector2>();
+				_dragAndSelectUI.OnEndDrag();
 
 				if (!_isAdditiveSelection)
 				{

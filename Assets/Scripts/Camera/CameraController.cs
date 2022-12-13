@@ -54,7 +54,7 @@ namespace StrategyGame
 			_rayOrigin.localPosition = new Vector3(0, 0, -_rayOriginDistance);
 			transform.rotation = Quaternion.Euler(_cameraRotation);
 
-			_cameraTargetPositionTr.position = -transform.forward * _cameraStartDistanceToGround;
+			_cameraTargetPositionTr.localPosition = new Vector3(0, 0, -_cameraStartDistanceToGround);
 
 			InitiateInputs();
 		}
