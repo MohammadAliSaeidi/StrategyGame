@@ -14,7 +14,7 @@ namespace StrategyGame
 
 		[Header("Camera looking point raycast")]
 		[SerializeField]
-		private Transform _rayOrigin;
+		private Transform _rayOriginTr;
 
 		[SerializeField]
 		private float _rayOriginDistance = 150;
@@ -45,16 +45,20 @@ namespace StrategyGame
 		[SerializeField]
 		private float _movementSpeed = 50;
 
+		public float DistanceToPivotPoint { get; private set; }
+
 		private Ray _cameraRay = new();
 		private bool _isMoving = false;
 		private Vector2 _movementInputValue;
 
 		private void Start()
 		{
-			_rayOrigin.localPosition = new Vector3(0, 0, -_rayOriginDistance);
+			_rayOriginTr.localPosition = new Vector3(0, 0, -_rayOriginDistance);
 			transform.rotation = Quaternion.Euler(_cameraRotation);
+			_mainVirtualCamera.forward = transform.forward;
 
 			_cameraTargetPositionTr.localPosition = new Vector3(0, 0, -_cameraStartDistanceToGround);
+			DistanceToPivotPoint = -_cameraTargetPositionTr.localPosition.z;
 
 			InitiateInputs();
 		}
@@ -79,8 +83,8 @@ namespace StrategyGame
 
 			_mainVirtualCamera.transform.position = Vector3.Lerp(_mainVirtualCamera.transform.position, _cameraTargetPositionTr.position, Time.deltaTime * _movementSmoothing);
 
-			_cameraRay.origin = _rayOrigin.position;
-			_cameraRay.direction = _rayOrigin.forward;
+			_cameraRay.origin = _rayOriginTr.position;
+			_cameraRay.direction = _rayOriginTr.forward;
 			if (Physics.Raycast(_cameraRay, out RaycastHit hitInfo, Mathf.Infinity, _raycastLayerMask))
 			{
 				transform.position = hitInfo.point;
@@ -109,6 +113,7 @@ namespace StrategyGame
 				{
 					var scrollingDelta = inputInfo.ReadValue<float>();
 					_cameraTargetPositionTr.localPosition = new Vector3(0, 0, _cameraTargetPositionTr.localPosition.z + scrollingDelta * _scrollSpeed);
+					DistanceToPivotPoint = -_cameraTargetPositionTr.localPosition.z;
 				}
 			}
 		}

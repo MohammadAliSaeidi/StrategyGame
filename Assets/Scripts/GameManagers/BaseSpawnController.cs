@@ -25,8 +25,8 @@ namespace StrategyGame
 		{
             if (Physics.Raycast(transform.position, -transform.up, out RaycastHit hitInfo, 50, _groundDetectionLayerMask))
 			{
-                var baseInstance = Instantiate(_commandBase, hitInfo.point, Quaternion.identity);
-                baseInstance.SetMode(true);
+                var baseInstance = Instantiate(_commandBase, hitInfo.point, Quaternion.Euler(0,-45,0));
+                baseInstance.SetPlacementState(true);
             }
 		}
     }

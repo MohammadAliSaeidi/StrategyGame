@@ -1,6 +1,6 @@
 ﻿namespace StrategyGame.Structures
 {
-	public class CommandCenter : Structure
+	public sealed class BarracksUSA : Barracks
 	{
 
 	}

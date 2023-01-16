@@ -29,6 +29,7 @@ namespace StrategyGame.Units
 		private Rect _rect = new();
 		private bool _isAdditiveSelection;
 		private bool _isDragging;
+		private StructureSelector _structureSelector;
 
 		private void OnValidate()
 		{
@@ -46,6 +47,7 @@ namespace StrategyGame.Units
 		private void Awake()
 		{
 			_units = GetComponent<UnitsContainer>().UnitsList;
+			_structureSelector = GetComponent<StructureSelector>();
 		}
 
 		private void Start()
@@ -104,7 +106,7 @@ namespace StrategyGame.Units
 				{
 					foreach (var selectedUnit in SelectedUnits)
 					{
-						selectedUnit.OnUnitDeselected();
+						selectedUnit.Deselect();
 					}
 					SelectedUnits.Clear();
 				}
@@ -122,6 +124,8 @@ namespace StrategyGame.Units
 
 		private void MultipleSelection()
 		{
+			_structureSelector.EnableBehaviour = false;
+
 			Debug.Log("<color=yellow>Selection Type: </color> Multiple selection");
 			foreach (var unit in _units)
 			{
@@ -129,14 +133,16 @@ namespace StrategyGame.Units
 				{
 					Debug.Log("Selected unit: " + unit.gameObject.name);
 
-					unit.OnUnitSelected();
+					unit.Select();
 					SelectedUnits.Add(unit);
 				}
 				else
 				{
-					unit.OnUnitDeselected();
+					unit.Deselect();
 				}
 			}
+
+			_structureSelector.EnableBehaviour = true;
 		}
 
 		private void SingleSelection()
@@ -149,12 +155,12 @@ namespace StrategyGame.Units
 					if (!unit.IsSelected)
 					{
 						SelectedUnits.Add(unit);
-						unit.OnUnitSelected();
+						unit.Select();
 					}
 					else if (_isAdditiveSelection)
 					{
 						SelectedUnits.Remove(unit);
-						unit.OnUnitDeselected();
+						unit.Deselect();
 					}
 				}
 			}

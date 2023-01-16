@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StrategyGame.Structures
 {
-    public class Barracks : Structure
+	public abstract class Barracks : Structure
     {
 
     }

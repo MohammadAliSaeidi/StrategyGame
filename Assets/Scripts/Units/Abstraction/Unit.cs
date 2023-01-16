@@ -6,7 +6,7 @@ using UnityEngine.AI;
 namespace StrategyGame.Units
 {
 	[RequireComponent(typeof(NavMeshAgent))]
-	public abstract class Unit : MonoBehaviour, IDamagable
+	public abstract class Unit : MonoBehaviour, IDamagable, ISelectable
 	{
 		[SerializeField]
 		protected GameObject _selectedEffect;
@@ -48,7 +48,7 @@ namespace StrategyGame.Units
 			throw new System.NotImplementedException();
 		}
 
-		internal void OnUnitSelected()
+		public void Select()
 		{
 			if (!IsSelected)
 			{
@@ -58,7 +58,7 @@ namespace StrategyGame.Units
 			}
 		}
 
-        internal void OnUnitDeselected()
+        public void Deselect()
 		{
 			if (IsSelected)
 			{

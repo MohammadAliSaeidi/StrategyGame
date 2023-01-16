@@ -3,20 +3,28 @@ using UnityEngine;
 
 namespace StrategyGame.Structures
 {
-	public abstract partial class Structure : MonoBehaviour
+
+	public abstract partial class Structure : MonoBehaviour, ISelectable, IDamagable
 	{
 
 		[SerializeField]
 		protected GroundSurface _gourndSurfaceChecking;
 
+		[SerializeField]
+		protected GameObject _selectedEffect;
+
+		[SerializeField]
+		protected StructureData _structureData;
+
 		public bool AllowPlacing { get; protected set; }
 		public bool IsPlaced { get; protected set; }
+		public bool IsSelected { get; protected set; }
 
-		private Coroutine _checkAllowPlacingCoroutine;
+		protected Coroutine _checkAllowPlacingCoroutine;
 
-		public void SetMode(bool isPlaced)
+		public void SetPlacementState(bool isPlaced)
 		{
-			if (!isPlaced)
+			if (isPlaced == false)
 			{
 				if (_checkAllowPlacingCoroutine != null)
 				{
@@ -24,6 +32,8 @@ namespace StrategyGame.Structures
 				}
 				_checkAllowPlacingCoroutine = StartCoroutine(Co_CheckAllowPlacing());
 			}
+
+			IsPlaced = isPlaced;
 		}
 
 		protected IEnumerator Co_CheckAllowPlacing()
@@ -41,9 +51,33 @@ namespace StrategyGame.Structures
 						break;
 					}
 				}
-				yield return new WaitForSeconds(0.2f);
 				yield return null;
 			}
+		}
+
+		public void Select()
+		{
+			if (!IsSelected)
+			{
+				_selectedEffect.SetActive(true);
+
+				IsSelected = true;
+			}
+		}
+
+		public void Deselect()
+		{
+			if (IsSelected)
+			{
+				_selectedEffect.SetActive(false);
+
+				IsSelected = false;
+			}
+		}
+
+		public void SetDamage(int damageAmount)
+		{
+			throw new System.NotImplementedException();
 		}
 
 		private void OnDrawGizmosSelected()
